@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, User, Stethoscope, HeartPulse, Activity } from 'lucide-react';
 import './Auth.css';
-import bgImage from '../assets/login-bg.png';
+import bgImage from '../../assets/login-bg.png';
 
 export default function Register() {
   const [role, setRole] = useState<'patient' | 'doctor'>('patient');

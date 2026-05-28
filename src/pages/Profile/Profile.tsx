@@ -1,6 +1,6 @@
 import React from 'react';
 import { useOutletContext } from 'react-router-dom';
-import type { Role } from '../mocks/data';
+import type { Role } from '../../mocks/data';
 import { Save, User, Image as ImageIcon } from 'lucide-react';
 import './Profile.css';
 
