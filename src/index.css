@@ -98,3 +98,8 @@ select.input-field {
 .btn-primary:active {
   transform: translateY(1px);
 }
+
+.page-header .btn-primary {
+  width: auto;
+  margin-top: 0;
+}

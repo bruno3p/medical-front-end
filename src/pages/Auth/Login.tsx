@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, HeartPulse } from 'lucide-react';
 import './Auth.css';
-import bgImage from '../assets/login-bg.png';
+import bgImage from '../../assets/login-bg.png';
 
 export default function Login() {
   const [email, setEmail] = useState('');
