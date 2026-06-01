@@ -37,11 +37,7 @@ export const ReportService = {
   uploadFile: async (id: number, file: File) => {
     const formData = new FormData();
     formData.append('file', file);
-    const response = await api.post(`/reports/${id}/upload`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    const response = await api.post(`/reports/${id}/upload`, formData);
     return response.data;
   },
   create: async (data: Omit<MedicalReport, 'id'>) => {
