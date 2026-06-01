@@ -80,6 +80,7 @@ export default function PatientDetails() {
       
       // 2. Faz o POST do arquivo para a rota de IA e recebe o laudo processado
       const updatedReport = await ReportService.uploadFile(newReportData.id, selectedFile);
+      updatedReport.isAiSummarized = true; // Força a exibição da caixa de IA
       
       setUploadStatus('done');
       setReports([{ ...updatedReport, doctorObj: undefined }, ...reports]);
@@ -214,6 +215,7 @@ export default function PatientDetails() {
                                 try {
                                   alert('Enviando para processamento...');
                                   const updatedReport = await ReportService.uploadFile(report.id, file);
+                                  updatedReport.isAiSummarized = true; // Força a exibição
                                   setReports(prev => prev.map(r => r.id === report.id ? { ...updatedReport, doctorObj: r.doctorObj } : r));
                                   alert('Laudo processado com sucesso!');
                                 } catch (err) {
