@@ -49,8 +49,18 @@ export const ReportService = {
   uploadFile: async (id: number, file: File) => {
     const formData = new FormData();
     formData.append('file', file);
-    const response = await api.post<BackendReport>(`/reports/${id}/upload`, formData);
-    return parseReport(response.data);
+    const response = await api.post<any>(`/reports/${id}/upload`, formData);
+    
+    let responseData = response.data;
+    if (typeof responseData === 'string') {
+      try {
+        responseData = JSON.parse(responseData);
+      } catch (e) {
+        console.warn('Response is a string but not valid JSON', responseData);
+      }
+    }
+    
+    return parseReport(responseData);
   },
   create: async (data: Omit<MedicalReport, 'id'>) => {
     const response = await api.post<BackendReport>('/reports', formatReport(data));

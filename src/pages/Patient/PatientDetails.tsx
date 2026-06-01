@@ -161,7 +161,7 @@ export default function PatientDetails() {
             {reports.length === 0 ? (
               <p className="text-muted">Nenhum laudo encontrado para este paciente.</p>
             ) : (
-              reports.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(report => {
+              [...reports].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(report => {
                 const doc = report.doctorObj;
                 return (
                   <div key={report.id} className={`timeline-item ${report.isAiSummarized ? 'ai-item' : ''}`}>
