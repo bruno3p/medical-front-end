@@ -58,13 +58,8 @@ export default function PatientMyReports() {
 
       setUploadStatus('extracting');
       
-      // 2. Faz o POST do arquivo para a rota de IA
-      await ReportService.uploadFile(newReportData.id, selectedFile);
-      
-      setUploadStatus('analyzing');
-      
-      // 3. Faz o GET novamente para puxar o resultado estruturado da IA gerado pelo backend
-      const updatedReport = await ReportService.getById(newReportData.id);
+      // 2. Faz o POST do arquivo para a rota de IA e recebe o laudo processado
+      const updatedReport = await ReportService.uploadFile(newReportData.id, selectedFile);
       
       setUploadStatus('done');
       setReports([{ ...updatedReport, doctorObj: undefined }, ...reports]);
@@ -156,12 +151,11 @@ export default function PatientMyReports() {
                             onChange={async (e) => {
                               const file = e.target.files?.[0];
                               if (!file) return;
-                              try {
-                                alert('Enviando para processamento...');
-                                await ReportService.uploadFile(report.id, file);
-                                const updatedReport = await ReportService.getById(report.id);
-                                setReports(prev => prev.map(r => r.id === report.id ? { ...updatedReport, doctorObj: r.doctorObj } : r));
-                                alert('Laudo processado com sucesso!');
+                                try {
+                                  alert('Enviando para processamento...');
+                                  const updatedReport = await ReportService.uploadFile(report.id, file);
+                                  setReports(prev => prev.map(r => r.id === report.id ? { ...updatedReport, doctorObj: r.doctorObj } : r));
+                                  alert('Laudo processado com sucesso!');
                               } catch (err) {
                                 console.error('Erro ao fazer upload:', err);
                                 alert('Erro ao processar laudo.');

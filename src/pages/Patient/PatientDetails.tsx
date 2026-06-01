@@ -78,13 +78,8 @@ export default function PatientDetails() {
 
       setUploadStatus('extracting');
       
-      // 2. Faz o POST do arquivo para a rota de IA
-      await ReportService.uploadFile(newReportData.id, selectedFile);
-      
-      setUploadStatus('analyzing');
-      
-      // 3. Puxa do backend o laudo já processado
-      const updatedReport = await ReportService.getById(newReportData.id);
+      // 2. Faz o POST do arquivo para a rota de IA e recebe o laudo processado
+      const updatedReport = await ReportService.uploadFile(newReportData.id, selectedFile);
       
       setUploadStatus('done');
       setReports([{ ...updatedReport, doctorObj: undefined }, ...reports]);
@@ -214,8 +209,7 @@ export default function PatientDetails() {
                                 if (!file) return;
                                 try {
                                   alert('Enviando para processamento...');
-                                  await ReportService.uploadFile(report.id, file);
-                                  const updatedReport = await ReportService.getById(report.id);
+                                  const updatedReport = await ReportService.uploadFile(report.id, file);
                                   setReports(prev => prev.map(r => r.id === report.id ? { ...updatedReport, doctorObj: r.doctorObj } : r));
                                   alert('Laudo processado com sucesso!');
                                 } catch (err) {
