@@ -136,9 +136,15 @@ export default function PatientMyReports() {
                               ))}
                             </ul>
                           ) : (
-                            <p className="text-muted">A IA processou o documento, mas não foi possível exibir os tópicos neste momento.</p>
+                            <div className="text-muted">
+                              <p>A IA processou o documento, mas a propriedade com os pontos não foi encontrada na resposta da API.</p>
+                              <div style={{ background: '#f5f5f5', padding: '10px', borderRadius: '4px', fontSize: '11px', overflowX: 'auto', marginTop: '10px' }}>
+                                <strong>RAW JSON retornado pelo seu Backend:</strong>
+                                <pre>{JSON.stringify(report, null, 2)}</pre>
+                              </div>
+                            </div>
                           )}
-                          <div className="original-file-action">
+                          <div className="original-file-action mt-3">
                             <button className="btn-outline-sm" onClick={() => alert('Abrindo PDF original: ' + report.originalFileName)}>
                               <FileText size={14} /> Ver Laudo Original (PDF)
                             </button>
