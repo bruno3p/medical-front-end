@@ -6,12 +6,24 @@ interface BackendReport extends Omit<MedicalReport, 'aiPointsOfAttention'> {
   aiPointsOfAttention: string; // JSON string
 }
 
-const parseReport = (backendReport: BackendReport): MedicalReport => ({
-  ...backendReport,
-  aiPointsOfAttention: backendReport.aiPointsOfAttention 
-    ? JSON.parse(backendReport.aiPointsOfAttention) 
-    : undefined
-});
+const parseReport = (backendReport: any): MedicalReport => {
+  let parsedPoints;
+  if (Array.isArray(backendReport.aiPointsOfAttention)) {
+    parsedPoints = backendReport.aiPointsOfAttention;
+  } else if (typeof backendReport.aiPointsOfAttention === 'string' && backendReport.aiPointsOfAttention.trim() !== '') {
+    try {
+      parsedPoints = JSON.parse(backendReport.aiPointsOfAttention);
+    } catch (e) {
+      parsedPoints = [backendReport.aiPointsOfAttention];
+    }
+  }
+
+  return {
+    ...backendReport,
+    aiPointsOfAttention: parsedPoints,
+    isAiSummarized: backendReport.isAiSummarized || (parsedPoints && parsedPoints.length > 0) || false
+  };
+};
 
 const formatReport = (frontendReport: Partial<MedicalReport>): Partial<BackendReport> => {
   const result: any = { ...frontendReport };
