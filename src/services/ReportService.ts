@@ -8,20 +8,39 @@ interface BackendReport extends Omit<MedicalReport, 'aiPointsOfAttention'> {
 
 const parseReport = (backendReport: any): MedicalReport => {
   let parsedPoints;
-  if (Array.isArray(backendReport.aiPointsOfAttention)) {
-    parsedPoints = backendReport.aiPointsOfAttention;
-  } else if (typeof backendReport.aiPointsOfAttention === 'string' && backendReport.aiPointsOfAttention.trim() !== '') {
+  
+  // O backend pode ter retornado em diferentes formatos ou nomenclaturas:
+  const rawPoints = backendReport?.aiPointsOfAttention 
+                 || backendReport?.aipointsofattention 
+                 || backendReport?.ai_points_of_attention 
+                 || backendReport?.summary
+                 || backendReport?.points;
+
+  if (Array.isArray(rawPoints)) {
+    parsedPoints = rawPoints;
+  } else if (typeof rawPoints === 'string' && rawPoints.trim() !== '') {
     try {
-      parsedPoints = JSON.parse(backendReport.aiPointsOfAttention);
+      parsedPoints = JSON.parse(rawPoints);
+      if (!Array.isArray(parsedPoints)) {
+        parsedPoints = [rawPoints];
+      }
     } catch (e) {
-      parsedPoints = [backendReport.aiPointsOfAttention];
+      // Se não for um JSON válido, transforma a string pura num array de 1 item
+      parsedPoints = [rawPoints];
     }
+  } else if (typeof rawPoints === 'object' && rawPoints !== null) {
+    parsedPoints = [JSON.stringify(rawPoints)];
   }
+
+  const isSummarized = backendReport?.isAiSummarized === true 
+                    || backendReport?.isAiSummarized === 'true' 
+                    || (parsedPoints && parsedPoints.length > 0) 
+                    || false;
 
   return {
     ...backendReport,
     aiPointsOfAttention: parsedPoints,
-    isAiSummarized: backendReport.isAiSummarized || (parsedPoints && parsedPoints.length > 0) || false
+    isAiSummarized: isSummarized
   };
 };
 

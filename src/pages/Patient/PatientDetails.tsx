@@ -180,14 +180,18 @@ export default function PatientDetails() {
                       <p className="timeline-details">{report.details}</p>
 
                       {/* Exibição Estruturada da IA */}
-                      {report.isAiSummarized && report.aiPointsOfAttention ? (
+                      {(report.isAiSummarized || (report.aiPointsOfAttention && report.aiPointsOfAttention.length > 0)) ? (
                         <div className="ai-summary-box">
                           <h5>📌 Pontos de Atenção (Extraídos automaticamente):</h5>
-                          <ul>
-                            {report.aiPointsOfAttention.map((point, idx) => (
-                              <li key={idx}>{point}</li>
-                            ))}
-                          </ul>
+                          {report.aiPointsOfAttention && report.aiPointsOfAttention.length > 0 ? (
+                            <ul>
+                              {report.aiPointsOfAttention.map((point, idx) => (
+                                <li key={idx}>{point}</li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <p className="text-muted">A IA processou o documento, mas não foi possível exibir os tópicos neste momento.</p>
+                          )}
                           <div className="original-file-action">
                             <button className="btn-outline-sm" onClick={() => alert('Abrindo PDF original: ' + report.originalFileName)}>
                               <FileText size={14} /> Ver Laudo Original (PDF)
