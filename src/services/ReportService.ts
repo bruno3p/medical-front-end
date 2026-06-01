@@ -30,6 +30,20 @@ export const ReportService = {
     const response = await api.get<BackendReport[]>(`/reports/patient/${patientId}`);
     return response.data.map(parseReport);
   },
+  getById: async (id: number) => {
+    const response = await api.get<BackendReport>(`/reports/${id}`);
+    return parseReport(response.data);
+  },
+  uploadFile: async (id: number, file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await api.post(`/reports/${id}/upload`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
   create: async (data: Omit<MedicalReport, 'id'>) => {
     const response = await api.post<BackendReport>('/reports', formatReport(data));
     return parseReport(response.data);

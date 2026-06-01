@@ -59,49 +59,49 @@ export default function PatientDetails() {
     }
   };
 
-  const handleProcessAI = () => {
-    if (!selectedFile) return;
+  const handleProcessAI = async () => {
+    if (!selectedFile || !patient) return;
 
     setUploadStatus('uploading');
     
-    // Simulação do fluxo de processamento de IA
-    setTimeout(() => {
+    try {
+      // 1. Cria o laudo sem pontos de atenção
+      const newReportData = await ReportService.create({
+        name: `Documento do Paciente: ${selectedFile.name}`,
+        details: 'Laudo externo enviado pelo paciente e processado pela Inteligência Artificial.',
+        patient_id: patient.id,
+        doctor_id: null, 
+        date: new Date().toISOString().split('T')[0],
+        isAiSummarized: false,
+        originalFileName: selectedFile.name,
+      });
+
       setUploadStatus('extracting');
       
+      // 2. Faz o POST do arquivo para a rota de IA
+      await ReportService.uploadFile(newReportData.id, selectedFile);
+      
+      setUploadStatus('analyzing');
+      
+      // 3. Puxa do backend o laudo já processado
+      const updatedReport = await ReportService.getById(newReportData.id);
+      
+      setUploadStatus('done');
+      setReports([{ ...updatedReport, doctorObj: undefined }, ...reports]);
+      
       setTimeout(() => {
-        setUploadStatus('analyzing');
-        
-        setTimeout(() => {
-          setUploadStatus('done');
-          
-          // Criar novo laudo simulado
-          const newReport: MedicalReport = {
-            id: Date.now(),
-            name: `Análise IA: ${selectedFile.name}`,
-            details: 'Laudo externo processado e resumido pela Inteligência Artificial.',
-            patient_id: patientId,
-            doctor_id: null, // Enviado de forma autônoma
-            date: new Date().toISOString().split('T')[0],
-            isAiSummarized: true,
-            originalFileName: selectedFile.name,
-            aiPointsOfAttention: [
-              'Valores de glicemia ligeiramente alterados',
-              'Sinais vitais dentro da normalidade',
-              'Recomenda-se acompanhamento nutricional'
-            ]
-          };
-          
-          setReports([newReport, ...reports]);
-
-          setTimeout(() => {
-            setShowUploadModal(false);
-            setUploadStatus('idle');
-            setSelectedFile(null);
-          }, 1500);
-
-        }, 2000);
+        setShowUploadModal(false);
+        setUploadStatus('idle');
+        setSelectedFile(null);
       }, 1500);
-    }, 1000);
+
+    } catch (err) {
+      console.error("Erro ao criar laudo e analisar IA", err);
+      alert("Erro ao enviar o laudo para processamento na nuvem.");
+      setShowUploadModal(false);
+      setUploadStatus('idle');
+      setSelectedFile(null);
+    }
   };
 
   return (
@@ -185,7 +185,7 @@ export default function PatientDetails() {
                       <p className="timeline-details">{report.details}</p>
 
                       {/* Exibição Estruturada da IA */}
-                      {report.isAiSummarized && report.aiPointsOfAttention && (
+                      {report.isAiSummarized && report.aiPointsOfAttention ? (
                         <div className="ai-summary-box">
                           <h5>📌 Pontos de Atenção (Extraídos automaticamente):</h5>
                           <ul>
@@ -199,6 +199,32 @@ export default function PatientDetails() {
                             </button>
                             <span className="text-muted">{report.originalFileName}</span>
                           </div>
+                        </div>
+                      ) : (
+                        <div className="upload-to-report mt-3">
+                          <label className="btn-outline-sm" style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}>
+                            <UploadCloud size={14} style={{ marginRight: '4px' }} /> 
+                            Enviar PDF para Resumo IA
+                            <input 
+                              type="file" 
+                              accept="application/pdf" 
+                              style={{ display: 'none' }} 
+                              onChange={async (e) => {
+                                const file = e.target.files?.[0];
+                                if (!file) return;
+                                try {
+                                  alert('Enviando para processamento...');
+                                  await ReportService.uploadFile(report.id, file);
+                                  const updatedReport = await ReportService.getById(report.id);
+                                  setReports(prev => prev.map(r => r.id === report.id ? { ...updatedReport, doctorObj: r.doctorObj } : r));
+                                  alert('Laudo processado com sucesso!');
+                                } catch (err) {
+                                  console.error('Erro ao fazer upload:', err);
+                                  alert('Erro ao processar laudo.');
+                                }
+                              }} 
+                            />
+                          </label>
                         </div>
                       )}
 

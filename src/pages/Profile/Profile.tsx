@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { PatientService } from '../../services/PatientService';
 import { DoctorService } from '../../services/DoctorService';
-import type { Role, Patient, Doctor } from '../../mocks/data';
+import type { Role } from '../../mocks/data';
 import { Save, User, Image as ImageIcon, Loader2 } from 'lucide-react';
 import './Profile.css';
 
