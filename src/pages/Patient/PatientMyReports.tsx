@@ -39,48 +39,45 @@ export default function PatientMyReports() {
     }
   };
 
-  const handleProcessAI = () => {
+  const handleProcessAI = async () => {
     if (!selectedFile) return;
 
     setUploadStatus('uploading');
     
-    setTimeout(() => {
+    try {
+      // 1. Cria o laudo sem pontos de atenção e sem ser resumido pela IA inicialmente
+      const newReportData = await ReportService.create({
+        name: `Documento do Paciente: ${selectedFile.name}`,
+        details: 'Laudo externo enviado pelo paciente e processado pela Inteligência Artificial.',
+        patient_id: loggedPatientId,
+        doctor_id: null, 
+        date: new Date().toISOString().split('T')[0],
+        isAiSummarized: false,
+        originalFileName: selectedFile.name,
+      });
+
       setUploadStatus('extracting');
+      
+      // 2. Faz o POST do arquivo para a rota de IA e recebe o laudo processado
+      const updatedReport = await ReportService.uploadFile(newReportData.id, selectedFile);
+      updatedReport.isAiSummarized = true; // Força a exibição da caixa de IA, independentemente do que o backend retornar
+      
+      setUploadStatus('done');
+      setReports([{ ...updatedReport, doctorObj: undefined }, ...reports]);
+      
       setTimeout(() => {
-        setUploadStatus('analyzing');
-        setTimeout(async () => {
-          
-          try {
-            const newReport = await ReportService.create({
-              name: `Documento do Paciente: ${selectedFile.name}`,
-              details: 'Laudo externo enviado pelo paciente e processado pela Inteligência Artificial.',
-              patient_id: loggedPatientId,
-              doctor_id: null, 
-              date: new Date().toISOString().split('T')[0],
-              isAiSummarized: true,
-              originalFileName: selectedFile.name,
-              aiPointsOfAttention: [
-                'Exame sem alterações significativas',
-                'Leve deficiência de vitamina D'
-              ]
-            });
-            
-            setUploadStatus('done');
-            setReports([{ ...newReport, doctorObj: undefined }, ...reports]);
-          } catch (err) {
-            console.error("Erro ao criar laudo", err);
-            alert("Erro ao enviar o laudo para a nuvem.");
-          }
-
-          setTimeout(() => {
-            setShowUploadModal(false);
-            setUploadStatus('idle');
-            setSelectedFile(null);
-          }, 1500);
-
-        }, 2000);
+        setShowUploadModal(false);
+        setUploadStatus('idle');
+        setSelectedFile(null);
       }, 1500);
-    }, 1000);
+
+    } catch (err) {
+      console.error("Erro ao criar laudo e analisar IA", err);
+      alert("Erro ao enviar o laudo para processamento na nuvem.");
+      setShowUploadModal(false);
+      setUploadStatus('idle');
+      setSelectedFile(null);
+    }
   };
 
   if (loading) {
@@ -110,7 +107,7 @@ export default function PatientMyReports() {
           {reports.length === 0 ? (
             <p className="text-muted">Você ainda não possui laudos enviados.</p>
           ) : (
-            reports.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(report => {
+            [...reports].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(report => {
               const doc = report.doctorObj;
               return (
                 <div key={report.id} className={`timeline-item ${report.isAiSummarized ? 'ai-item' : ''}`}>
@@ -128,20 +125,57 @@ export default function PatientMyReports() {
                     
                     <p className="timeline-details">{report.details}</p>
 
-                    {report.isAiSummarized && report.aiPointsOfAttention && (
-                      <div className="ai-summary-box">
-                        <h5>📌 Pontos de Atenção (Extraídos automaticamente):</h5>
-                        <ul>
-                          {report.aiPointsOfAttention.map((point, idx) => (
-                            <li key={idx}>{point}</li>
-                          ))}
-                        </ul>
-                        <div className="original-file-action">
-                          <button className="btn-outline-sm" onClick={() => alert('Abrindo PDF original: ' + report.originalFileName)}>
-                            <FileText size={14} /> Ver Laudo Original (PDF)
-                          </button>
-                          <span className="text-muted">{report.originalFileName}</span>
+                      {/* Exibição Estruturada da IA */}
+                      {(report.isAiSummarized || (report.aiPointsOfAttention && report.aiPointsOfAttention.length > 0)) ? (
+                        <div className="ai-summary-box">
+                          <h5>📌 Pontos de Atenção (Extraídos automaticamente):</h5>
+                          {report.aiPointsOfAttention && report.aiPointsOfAttention.length > 0 ? (
+                            <ul>
+                              {report.aiPointsOfAttention.map((point, idx) => (
+                                <li key={idx}>{point}</li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <div className="text-muted">
+                              <p>A IA processou o documento, mas a propriedade com os pontos não foi encontrada na resposta da API.</p>
+                              <div style={{ background: '#f5f5f5', padding: '10px', borderRadius: '4px', fontSize: '11px', overflowX: 'auto', marginTop: '10px' }}>
+                                <strong>RAW JSON retornado pelo seu Backend:</strong>
+                                <pre>{JSON.stringify(report, null, 2)}</pre>
+                              </div>
+                            </div>
+                          )}
+                          <div className="original-file-action mt-3">
+                            <button className="btn-outline-sm" onClick={() => alert('Abrindo PDF original: ' + report.originalFileName)}>
+                              <FileText size={14} /> Ver Laudo Original (PDF)
+                            </button>
+                            <span className="text-muted">{report.originalFileName}</span>
+                          </div>
                         </div>
+                      ) : (
+                      <div className="upload-to-report mt-3">
+                        <label className="btn-outline-sm" style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}>
+                          <UploadCloud size={14} style={{ marginRight: '4px' }} /> 
+                          Enviar PDF para Resumo IA
+                          <input 
+                            type="file" 
+                            accept="application/pdf" 
+                            style={{ display: 'none' }} 
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                                try {
+                                  alert('Enviando para processamento...');
+                                  const updatedReport = await ReportService.uploadFile(report.id, file);
+                                  updatedReport.isAiSummarized = true; // Força a exibição
+                                  setReports(prev => prev.map(r => r.id === report.id ? { ...updatedReport, doctorObj: r.doctorObj } : r));
+                                  alert('Laudo processado com sucesso!');
+                              } catch (err) {
+                                console.error('Erro ao fazer upload:', err);
+                                alert('Erro ao processar laudo.');
+                              }
+                            }} 
+                          />
+                        </label>
                       </div>
                     )}
 
