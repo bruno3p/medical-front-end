@@ -42,8 +42,13 @@ export default function Register() {
       alert('Cadastro realizado com sucesso! Faça login.');
       navigate('/');
     } catch (err: any) {
-      setError('Erro ao se conectar com o servidor. Tente novamente.');
-      console.error(err);
+      if (err.response && err.response.data) {
+        const backendMessage = err.response.data.message || err.response.data.error || JSON.stringify(err.response.data);
+        setError(`O Backend recusou o cadastro (Status ${err.response.status}): ${backendMessage}`);
+      } else {
+        setError('Erro ao se conectar com o servidor. Tente novamente.');
+      }
+      console.error("Detalhe completo do erro:", err);
     }
   };
 
