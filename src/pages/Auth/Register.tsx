@@ -12,11 +12,27 @@ export default function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [specialty, setSpecialty] = useState('');
+  const [error, setError] = useState('');
 
   const navigate = useNavigate();
 
+  const validatePassword = (pass: string) => {
+    if (pass.length < 8) return 'A senha deve ter no mínimo 8 caracteres.';
+    if (!/[A-Z]/.test(pass)) return 'A senha deve conter pelo menos uma letra maiúscula.';
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(pass)) return 'A senha deve conter pelo menos um caractere especial.';
+    return null;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
+
+    const passwordError = validatePassword(password);
+    if (passwordError) {
+      setError(passwordError);
+      return;
+    }
+
     try {
       if (role === 'patient') {
         await PatientService.create({ name, email, password, avatar: 'https://i.pravatar.cc/150?u=' + email } as any);
@@ -25,8 +41,8 @@ export default function Register() {
       }
       alert('Cadastro realizado com sucesso! Faça login.');
       navigate('/');
-    } catch (err) {
-      alert('Erro ao se conectar com o servidor. Tente novamente.');
+    } catch (err: any) {
+      setError('Erro ao se conectar com o servidor. Tente novamente.');
       console.error(err);
     }
   };
@@ -65,6 +81,12 @@ export default function Register() {
             Médico
           </button>
         </div>
+
+        {error && (
+          <div style={{ backgroundColor: '#fee2e2', color: '#ef4444', padding: '0.75rem', borderRadius: '0.5rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span style={{ fontWeight: 'bold' }}>Atenção:</span> {error}
+          </div>
+        )}
 
         <form className="auth-form" onSubmit={handleSubmit}>
           <div className="input-wrapper">
