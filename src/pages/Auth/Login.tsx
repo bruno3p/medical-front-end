@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, HeartPulse, AlertCircle } from 'lucide-react';
-import { PatientService } from '../../services/PatientService';
-import { DoctorService } from '../../services/DoctorService';
+import { api } from '../../services/api';
 import './Auth.css';
 import bgImage from '../../assets/login-bg.png';
 
@@ -18,28 +17,26 @@ export default function Login() {
     setError('');
 
     try {
-      // Como o backend é REST simples sem rota de auth, buscamos para simular
-      const patients = await PatientService.getAll();
-      const p = patients.find(pat => pat.email === email);
-      if (p) {
-        localStorage.setItem('loggedUserId', String(p.id));
-        localStorage.setItem('userRole', 'patient');
+      // Chama a nova rota de login protegida por JWT
+      const response = await api.post('/auth/login', { email, password });
+      
+      const { token, role, user } = response.data;
+      
+      if (token && user && user.id) {
+        localStorage.setItem('token', token);
+        localStorage.setItem('userRole', role ? role.toLowerCase() : 'patient');
+        localStorage.setItem('loggedUserId', String(user.id));
+        
         navigate('/app');
-        return;
+      } else {
+        setError('Resposta inválida do servidor.');
       }
-
-      const doctors = await DoctorService.getAll();
-      const d = doctors.find(doc => doc.email === email);
-      if (d) {
-        localStorage.setItem('loggedUserId', String(d.id));
-        localStorage.setItem('userRole', 'doctor');
-        navigate('/app');
-        return;
+    } catch (err: any) {
+      if (err.response && err.response.status === 401) {
+        setError('E-mail ou senha incorretos.');
+      } else {
+        setError('Erro ao se conectar com o servidor.');
       }
-
-      setError('E-mail ou senha incorretos.');
-    } catch (err) {
-      setError('Erro ao se conectar com o servidor.');
       console.error(err);
     }
   };
